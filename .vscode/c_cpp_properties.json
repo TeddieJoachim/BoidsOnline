@@ -1,0 +1,17 @@
+{
+    "configurations": [
+        {
+            "name": "WSL",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/home/commanderted/emsdk/upstream/emscripten/cache/sysroot/include"
+            ],
+            "defines": [],
+            "compilerPath": "/home/commanderted/emsdk/upstream/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-clang-x64"
+        }
+    ],
+    "version": 4
+}

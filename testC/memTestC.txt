@@ -1,0 +1,8 @@
+# to test for memory leaks, run these commands
+# compiles a main.c and boids.c
+
+gcc -g -O0 -Wall -Wextra main.c ../src/boids.c -o boidMemTest
+
+
+# then run with valgrind
+valgrind --leak-check=full --show-leak-kinds=all ./boidMemTest
