@@ -3,7 +3,7 @@ a shader program, create a vertex buffer, place vertices into it, tell WebGl how
 interpret this data, then draw the shape. */
 
 import { vertexShaderSource, fragmentShaderSource } from "./shaders.js";
-import { createSphere, createCone } from "./primitives.js";
+import { createSphere, createCone, createDonut} from "./primitives.js";
 
 
 export class Renderer {
@@ -31,13 +31,17 @@ export class Renderer {
       throw new Error(gl.getProgramInfoLog(this.program));
     }
 
+    this.rotationAxisLocation = gl.getUniformLocation(this.program, "uRotationAxis");
+    this.rotationAngleLocation = gl.getUniformLocation(this.program, "uRotationAngle");
     this.scaleLocation = gl.getUniformLocation(this.program, "uScale");
     this.offsetLocation = gl.getUniformLocation(this.program, "uOffset");
     this.lightLocation = gl.getUniformLocation(this.program, "uLightDirection");
     // birds are cones, these values will be scaled later
     const food = createSphere(1.0, 16, 16);
     const bird = createCone(1.0, 1.0, 16);
+    const donut = createDonut(0.7, 0.3, 24, 12);
 
+    this.donutGeometry = this.createGeometry(donut);
     this.sphereGeometry = this.createGeometry(food, boidDim);
     this.coneGeometry = this.createGeometry(bird, boidDim);
   }
@@ -77,8 +81,11 @@ export class Renderer {
     return {vao, indexCount: geometry.indices.length};
   }
 
-  drawGeometry(geometry, position, scale) {
+  drawGeometry(geometry, position, scale, rotation) {
     const gl = this.gl;
+    
+    gl.uniform3fv(this.rotationAxisLocation, rotation.axis);
+    gl.uniform1f(this.rotationAngleLocation, rotation.angle);
 
     gl.bindVertexArray(geometry.vao);
 
@@ -88,6 +95,7 @@ export class Renderer {
     gl.uniform3f(this.scaleLocation, scale[0], scale[1], scale[2]);
 
     gl.drawElements(gl.TRIANGLES, geometry.indexCount, gl.UNSIGNED_SHORT, 0);
+
   }
 
   compileShader(type, source) {
@@ -104,25 +112,25 @@ export class Renderer {
     return shader;
   }
 
-  drawObject(position, acceleration, type) {
+  drawObject(position, rotation, type) {
     const [x, y, z] = position;
-    const [delX, delY, delZ] = acceleration;
-
+    const IDRot = { axis: [1, 0, 0], angle: 0 };
+    const donutRotation = {axis: [1, 0, 0], angle: Math.PI / 2};
     if (type == "BIRD") {
       //this.drawGeometry(this.sphereGeometry, [x,y,z], [0.018, 0.018, 0.07])
-      this.drawGeometry(this.coneGeometry, [x,y,z], [0.05, 0.05, 1.0]);
+      this.drawGeometry(this.coneGeometry, [x,y,z], [0.025, 0.08, 0.025], rotation);
       // TODO use acceleration to point cone in bird direction
     }
     else if (type == "FOOD1") {
-      this.drawGeometry(this.sphereGeometry, [x,y,z], [0.025, 0.025, 0.025])
+      this.drawGeometry(this.sphereGeometry, [x,y,z], [0.015, 0.015, 0.015], IDRot);
     }
     else {
-      console.log("MAKE DONUTS!!!")
+      this.drawGeometry(this.donutGeometry, [x,y,z], [0.02, 0.02, 0.02], donutRotation);
     }
 
   }
 
-  render(boidPositions, boidAccelerations, numBoids, boidDim) {
+  render(boidPositions, boidVelocities, numBoids, boidDim) {
     const gl = this.gl;
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -133,7 +141,7 @@ export class Renderer {
     gl.enable(gl.DEPTH_TEST);
 
     gl.useProgram(this.program);
-    gl.uniform3f(this.lightLocation, 1.0, -1.0, -2.0);
+    gl.uniform3f(this.lightLocation, 1.0, -2.0, -1.0);
 
     for (let i = 0; i < numBoids; i++) {
       // when i=0 we want 0,1,2. i=1 want 3,4,5 etc
@@ -141,17 +149,39 @@ export class Renderer {
       const y = boidPositions[i * boidDim + 1];
       const z = boidPositions[i * boidDim + 2];
 
-      const delX = boidAccelerations[i * boidDim];
-      const delY = boidAccelerations[i * boidDim + 1];
-      const delZ = boidAccelerations[i * boidDim + 2];
+      const delX = boidVelocities[i * boidDim];
+      const delY = boidVelocities[i * boidDim + 1];
+      const delZ = boidVelocities[i * boidDim + 2];
 
       if (i > 0 && i % 10 == 0) {
-        this.drawObject([x,y,z], [0,0,0], "FOOD");
+        this.drawObject([x,y,z], null, "FOOD");
       }
       else if (i > 0 && i % 11 == 0) {
-        this.drawObject([x,y,z], [0,0,0], "FOOD1");
+        this.drawObject([x,y,z], null, "FOOD1");
       }
-      else this.drawObject([x,y,z], [delX,delY,delZ], "BIRD");
+      else {
+        const mag = Math.hypot(delX, delY, delZ);
+        // Default to no rotation
+        let rotation = { axis: [1, 0, 0], angle: 0 };
+
+        if (mag > 1e-6) {
+          const direction = [delX / mag, delY / mag, delZ / mag];
+
+          // Original cone direction: positive Y
+          const axis = [direction[2], 0, -direction[0]];
+          const axisMag = Math.hypot(...axis);
+
+          if (axisMag < 1e-6) {
+            rotation.angle = direction[1] >= 0 ? 0 : Math.PI;
+          } else {
+            rotation.axis = axis.map(v => v / axisMag);
+            rotation.angle = Math.acos(Math.max(-1, Math.min(1, direction[1])));
+          }
+        }
+
+        // Always draw the bird
+        this.drawObject([x, y, z], rotation, "BIRD");
+      }
     }
   }
 }

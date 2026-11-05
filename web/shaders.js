@@ -9,13 +9,25 @@ export const vertexShaderSource = `#version 300 es
 
   uniform vec3 uOffset;
   uniform vec3 uScale;
+  uniform vec3 uRotationAxis;
+  uniform float uRotationAngle;
 
   out vec3 vNormal;
 
-  void main() {
-    vec3 position = aPosition * uScale + uOffset;
+  vec3 rotateVector(vec3 v, vec3 axis, float angle) {
+    float c = cos(angle);
+    float s = sin(angle);
 
-    vNormal = aNormal;
+    return v * c + cross(axis, v) * s + axis * dot(axis, v) * (1.0 - c);
+  }
+  void main() {
+    vec3 scaledPosition = aPosition * uScale;
+
+    vec3 rotatedPosition = rotateVector(scaledPosition, uRotationAxis, uRotationAngle);
+
+    vec3 position = rotatedPosition + uOffset;
+
+    vNormal = normalize(rotateVector(aNormal / uScale, uRotationAxis, uRotationAngle));
 
     gl_Position = vec4(position.x * 0.75, position.y, position.z, 1.0);
   }
@@ -40,9 +52,9 @@ export const fragmentShaderSource = `#version 300 es
     float diffuse = max(dot(normal, lightDir), 0.0);
 
     // Ambient illumination
-    float ambient = 0.2;
+    float ambient = 0.6;
 
-    float lighting = ambient + 0.8 * diffuse;
+    float lighting = ambient + 0.6 * diffuse;
 
     vec3 objectColor = vec3(1.0, 0.0, 0.0);
 

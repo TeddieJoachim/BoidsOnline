@@ -37,7 +37,7 @@
 
 Boid* themBoids = NULL; // totally safe, production level code. the array of Boid structs
 float* boidSharedPositions = NULL; // shared heap memory between WebGl and this program
-float* boidSharedAcceleration = NULL;
+float* boidSharedVelocities = NULL;
 
 // rand() returns a "random" float from 0 to some big fuckin number. if we want to clamp it between 
 // min and max we need to do some arithmetic
@@ -59,7 +59,7 @@ void initializeBoids()
   srand((unsigned int)time(NULL)); // seeds rand, have to cast the current time (time(NULL)) to unsigned int
   themBoids = malloc(NUM_BOIDS * sizeof(Boid));
   boidSharedPositions = malloc(NUM_BOIDS * NUM_DIM * sizeof(float));
-  boidSharedAcceleration = malloc(NUM_BOIDS * NUM_DIM * sizeof(float));
+  boidSharedVelocities = malloc(NUM_BOIDS * NUM_DIM * sizeof(float));
   
   if (themBoids == NULL || boidSharedPositions == NULL) 
   {
@@ -85,7 +85,7 @@ void initializeBoids()
       themBoids[bI].acceleration[idx] = 0;
       // for this boid, write its position values to the shared heap memory as they are initialized
       boidSharedPositions[(bI * NUM_DIM) + idx] = themBoids[bI].position[idx];
-      boidSharedAcceleration[(bI * NUM_DIM) + idx] = themBoids[bI].acceleration[idx];
+      boidSharedVelocities[(bI * NUM_DIM) + idx] = themBoids[bI].velocity[idx];
     }
 
     bI++;
@@ -298,7 +298,7 @@ void advanceBoids(float delT)
       clampAtBoundaries(&thisBoid, coordIdx);
       sharedPosIdx = (birdIdx * NUM_DIM) + coordIdx;
       boidSharedPositions[sharedPosIdx] = thisBoid.position[coordIdx];
-      boidSharedAcceleration[sharedPosIdx] = thisBoid.acceleration[coordIdx];
+      boidSharedVelocities[sharedPosIdx] = thisBoid.velocity[coordIdx];
     }
   }
 }
@@ -320,7 +320,7 @@ float* getBoidPositions()
 EMSCRIPTEN_KEEPALIVE
 float* getBoidAccelerations()
 {
-  return &boidSharedAcceleration[0];
+  return &boidSharedVelocities[0];
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -350,5 +350,5 @@ void freeBoids()
   
   free(themBoids);
   free(boidSharedPositions);
-  free(boidSharedAcceleration);
+  free(boidSharedVelocities);
 }

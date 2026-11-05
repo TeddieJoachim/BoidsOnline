@@ -58,7 +58,7 @@ export function createCone(radius, height, segments) {
 
   // Tip of cone
   vertices.push(0, halfHeight, 0);
-  normals.push(0, 1, 0);
+  normals.push(0, 1,0);
 
   // Side base vertices
   for (let i = 0; i < segments; i++) {
@@ -117,4 +117,46 @@ export function createCone(radius, height, segments) {
 }
 
 
-// TODO CREATE DONUT!!
+export function createDonut(majorRadius, minorRadius, majorSegments, minorSegments) {
+  const vertices = [];
+  const normals = [];
+  const indices = [];
+
+  for (let i = 0; i <= majorSegments; i++) {
+    const theta = (2 * Math.PI * i) / majorSegments;
+
+    for (let j = 0; j <= minorSegments; j++) {
+      const phi = (2 * Math.PI * j) / minorSegments;
+
+      // Normal direction
+      const nx = Math.cos(theta) * Math.cos(phi);
+      const ny = Math.sin(phi);
+      const nz = Math.sin(theta) * Math.cos(phi);
+
+      normals.push(nx, ny, nz);
+
+      // Vertex position
+      const x = (majorRadius + minorRadius * Math.cos(phi)) * Math.cos(theta);
+      const y = minorRadius * Math.sin(phi);
+      const z = (majorRadius + minorRadius * Math.cos(phi)) * Math.sin(theta);
+
+      vertices.push(x, y, z);
+    }
+  }
+
+  // Connect neighboring vertices into triangles
+  for (let i = 0; i < majorSegments; i++) {
+    for (let j = 0; j < minorSegments; j++) {
+      const current = i * (minorSegments + 1) + j;
+      const next = current + minorSegments + 1;
+
+      indices.push(current, next, current + 1, current + 1, next, next + 1);
+    }
+  }
+
+  return {
+    vertices: new Float32Array(vertices),
+    normals: new Float32Array(normals),
+    indices: new Uint16Array(indices)
+  };
+}
