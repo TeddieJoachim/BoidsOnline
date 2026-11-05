@@ -31,10 +31,11 @@ jobs:
 
       - name: Prepare website
         run: |
-          mkdir public
+          mkdir -p public/build
           cp -r web/. public/
-          cp build/boidRunner.js public/
-          cp build/boidRunner.wasm public/
+          cp web/index-pages.html public/index.html
+          cp build/boidRunner.js public/build/
+          cp build/boidRunner.wasm public/build/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
