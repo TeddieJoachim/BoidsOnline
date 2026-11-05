@@ -201,7 +201,7 @@ void maintainSpeed(Boid* thisBoid, float velocityMag)
   }
 }
 
-// updates birds acceleration to steer away from walls. I got some AI help here and need to understand these updates to acceleration more. !!!!!!!!TODO!!!!!!
+// decrement acceleration in direction of walls if applicable
 void avoidBoundaries(Boid* thisBoid)
 {
   float distToMax, distToMin;
@@ -210,6 +210,9 @@ void avoidBoundaries(Boid* thisBoid)
     distToMax = WORLD_MAX - thisBoid->position[coordIdx];
     distToMin = thisBoid->position[coordIdx] - WORLD_MIN;
 
+    // if we are between a wall and the threshold, decrement by a set weight * (distance into the avoidance zone) / threshold
+    // dividing by the threshold gives us a value between 0 and 1 which makes adjusting weights nice
+    // eg if boundary = 1.0, threshold = 0.5 and our bird is at 0.75. distToMax = 0.25, 0.25/0.5 = 1/4 / 1/2 = 2/8 = 0.25
     if (distToMax < BOUNDARY_PROXIMITY_THRESHOLD)
     {
       thisBoid->acceleration[coordIdx] -= BOUNDARY_WEIGHT * 
