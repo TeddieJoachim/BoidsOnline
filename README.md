@@ -38,6 +38,7 @@ The Emscripten environment has not been activated in the current terminal.
 
 - Windows: run `emsdk_env.bat` or open the Emscripten Command Prompt.
 - macOS/Linux: run `source ./emsdk_env.sh` from the SDK directory.
+  If outside that dir (of course you are) run `source ~/emsdk/emsdk_env.sh`
 
 ### `Module._initializeBoids is not a function`
 

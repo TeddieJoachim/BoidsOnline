@@ -3,7 +3,7 @@ a shader program, create a vertex buffer, place vertices into it, tell WebGl how
 interpret this data, then draw the shape. */
 
 import { vertexShaderSource, fragmentShaderSource } from "./shaders.js";
-import { createSphere } from "./primitives.js";
+import { createSphere, createCone } from "./primitives.js";
 
 
 export class Renderer {
@@ -35,6 +35,7 @@ export class Renderer {
     this.lightLocation = gl.getUniformLocation(this.program, "uLightDirection");
     // birds are just spheres for now
     const sphere = createSphere(0.025, 8, 8);
+    //const cone = createCone(0.1, 0.2, 16);
 
     // vertex buffer creation. vao = vertex array object
     this.vao = gl.createVertexArray();
@@ -66,7 +67,7 @@ export class Renderer {
     const normalLocation = gl.getAttribLocation(this.program, "aNormal");
 
     gl.enableVertexAttribArray(normalLocation);
-    gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(normalLocation, boidDim, gl.FLOAT, false, 0, 0);
 
     this.indexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
