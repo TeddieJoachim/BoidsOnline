@@ -8,11 +8,12 @@ export const vertexShaderSource = `#version 300 es
   in vec3 aNormal;
 
   uniform vec3 uOffset;
+  uniform vec3 uScale;
 
   out vec3 vNormal;
 
   void main() {
-    vec3 position = aPosition + uOffset;
+    vec3 position = aPosition * uScale + uOffset;
 
     vNormal = aNormal;
 

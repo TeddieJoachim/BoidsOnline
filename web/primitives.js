@@ -71,9 +71,9 @@ export function createCone(radius, height, segments) {
 
     // Side normal
     normals.push(
-        (height * Math.cos(theta)) / normalLength,
-        (2 * radius) / normalLength,
-        (height * Math.sin(theta)) / normalLength
+      (height * Math.cos(theta)) / normalLength,
+      (2 * radius) / normalLength,
+      (height * Math.sin(theta)) / normalLength
     );
   }
 
@@ -107,6 +107,23 @@ export function createCone(radius, height, segments) {
     const next = baseStart + (i + 1) % segments;
 
     indices.push(baseCenter, next, current);
+  }
+
+  // rotate so that beak points out
+  for (let i = 0; i < vertices.length; i += 3) {
+    const y = vertices[i + 1];
+    const z = vertices[i + 2];
+
+    vertices[i + 1] = -z;
+    vertices[i + 2] = y;
+  }
+  // do the same for normals
+  for (let i = 0; i < normals.length; i += 3) {
+    const y = normals[i + 1];
+    const z = normals[i + 2];
+
+    normals[i + 1] = -z;
+    normals[i + 2] = y;
   }
 
   return {

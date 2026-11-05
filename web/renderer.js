@@ -31,53 +31,63 @@ export class Renderer {
       throw new Error(gl.getProgramInfoLog(this.program));
     }
 
+    this.scaleLocation = gl.getUniformLocation(this.program, "uScale");
     this.offsetLocation = gl.getUniformLocation(this.program, "uOffset");
     this.lightLocation = gl.getUniformLocation(this.program, "uLightDirection");
     // birds are just spheres for now
-    const sphere = createSphere(0.025, 8, 8);
-    //const cone = createCone(0.1, 0.2, 16);
+    const sphere = createSphere(1.0, 16, 16);
+    const cone = createCone(1.0, 1.0, 16);
 
-    // vertex buffer creation. vao = vertex array object
-    this.vao = gl.createVertexArray();
-    gl.bindVertexArray(this.vao);
+    this.sphereGeometry = this.createGeometry(sphere, boidDim);
+    this.coneGeometry = this.createGeometry(cone, boidDim);
+  }
 
-    // operations that target ARRAY_BUFFER will write to this buffer
-    this.vertexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+  createGeometry(geometry) {
+    const gl = this.gl;
 
-    gl.bufferData(gl.ARRAY_BUFFER, sphere.vertices, gl.STATIC_DRAW);
+    const vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
 
-    // connect vertex data and aPosition. this function asks where is aPosition in the shader program
-    // returns an int representing its attribute location 
+    // Position buffer
+    const vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, geometry.vertices, gl.STATIC_DRAW);
+
     const positionLocation = gl.getAttribLocation(this.program, "aPosition");
-
-    // causes webgl to feed vertex data to aPosition 
     gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
 
-    // positionLocation -> aPosition receives data, boidDim -> boidDim values per vertex, gl.FLOAT -> they are floats, false -> don't normalize them, stride and start = 0.
-    gl.vertexAttribPointer(positionLocation, boidDim, gl.FLOAT, false, 0, 0);
+    // Normal buffer
+    const normalBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, geometry.normals, gl.STATIC_DRAW);
 
-    // Create normal buffer
-    this.normalBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
-
-    gl.bufferData(gl.ARRAY_BUFFER, sphere.normals, gl.STATIC_DRAW);
-
-    // Connect normal data to aNormal
     const normalLocation = gl.getAttribLocation(this.program, "aNormal");
-
     gl.enableVertexAttribArray(normalLocation);
-    gl.vertexAttribPointer(normalLocation, boidDim, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);
 
-    this.indexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+    // Index buffer
+    const indexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, geometry.indices, gl.STATIC_DRAW);
 
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, sphere.indices, gl.STATIC_DRAW);
-
-    this.indexCount = sphere.indices.length;
+    gl.bindVertexArray(null);
     // unbind our vao. A VAO is a saved description of how vertex data is organized and connected to shader inputs. 
     // Unbinding it doesn't destroy that description it just stops making it the active configuration.
-    gl.bindVertexArray(null);
+    return {vao, indexCount: geometry.indices.length};
+  }
+
+  drawGeometry(geometry, position, scale) {
+    const gl = this.gl;
+
+    gl.bindVertexArray(geometry.vao);
+
+    // Set position and scale
+    gl.uniform3f(this.offsetLocation, position[0], position[1], position[2]);
+
+    gl.uniform3f(this.scaleLocation, scale[0], scale[1], scale[2]);
+
+    gl.drawElements(gl.TRIANGLES, geometry.indexCount, gl.UNSIGNED_SHORT, 0);
   }
 
   compileShader(type, source) {
@@ -94,6 +104,18 @@ export class Renderer {
     return shader;
   }
 
+  drawBird(position) {
+    const [x, y, z] = position;
+
+    // Body
+    this.drawGeometry(this.sphereGeometry, [x, y, z], [0.06, 0.035, 0.12]);
+
+    // Head
+    this.drawGeometry(this.sphereGeometry, [x, y+0.015, z + 0.13], [0.035, 0.035, 0.035]);
+
+    // Beak
+    this.drawGeometry(this.coneGeometry, [x, y+0.015, z + 0.19], [0.018, 0.018, 0.07]);
+  }
 
   render(boidPositions, numBoids, boidDim) {
     const gl = this.gl;
@@ -107,7 +129,6 @@ export class Renderer {
 
     gl.useProgram(this.program);
     gl.uniform3f(this.lightLocation, 1.0, -1.0, -2.0);
-    gl.bindVertexArray(this.vao);
 
     for (let i = 0; i < numBoids; i++) {
       // when i=0 we want 0,1,2. i=1 want 3,4,5 etc
@@ -115,13 +136,7 @@ export class Renderer {
       const y = boidPositions[i * boidDim + 1];
       const z = boidPositions[i * boidDim + 2];
 
-      // Tell the shader where to position this sphere
-      gl.uniform3f(this.offsetLocation, x, y, z);
-
-      // Draw the sphere
-      gl.drawElements(gl.TRIANGLES, this.indexCount, gl.UNSIGNED_SHORT, 0);
+      this.drawBird([x,y,z]);
     }
-
-    gl.bindVertexArray(null);
   }
 }
