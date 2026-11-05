@@ -34,6 +34,8 @@ function runGame(Module) {
   // Module._getBoidPos returns the address we begin reading  
   // we read numPositions (bytes * sizeof(float)) = 4 bytes * numFloats
   const sharedHeapCoords = new Float32Array(Module.HEAPU8.buffer, Module._getBoidPositions(), numPositions);
+  const sharedHeapAccels = new Float32Array(Module.HEAPU8.buffer, Module._getBoidAccelerations(), numPositions);
+
 
   const delTime = 1.0/60.0; 
   let prevTime = null;
@@ -60,7 +62,7 @@ function runGame(Module) {
     }
 
     // render using sharedHeapCoords (this is a pointer, not a copy!)
-    renderer.render(sharedHeapCoords, numBoids, boidDim);
+    renderer.render(sharedHeapCoords, sharedHeapAccels , numBoids, boidDim);
   
     // next frame
     requestAnimationFrame(gameLoop);

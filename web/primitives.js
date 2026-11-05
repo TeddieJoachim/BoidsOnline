@@ -109,23 +109,6 @@ export function createCone(radius, height, segments) {
     indices.push(baseCenter, next, current);
   }
 
-  // rotate so that beak points out
-  for (let i = 0; i < vertices.length; i += 3) {
-    const y = vertices[i + 1];
-    const z = vertices[i + 2];
-
-    vertices[i + 1] = -z;
-    vertices[i + 2] = y;
-  }
-  // do the same for normals
-  for (let i = 0; i < normals.length; i += 3) {
-    const y = normals[i + 1];
-    const z = normals[i + 2];
-
-    normals[i + 1] = -z;
-    normals[i + 2] = y;
-  }
-
   return {
     vertices: new Float32Array(vertices),
     indices: new Uint16Array(indices),
@@ -133,3 +116,5 @@ export function createCone(radius, height, segments) {
   };
 }
 
+
+// TODO CREATE DONUT!!

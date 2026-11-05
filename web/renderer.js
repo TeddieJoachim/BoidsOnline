@@ -34,12 +34,12 @@ export class Renderer {
     this.scaleLocation = gl.getUniformLocation(this.program, "uScale");
     this.offsetLocation = gl.getUniformLocation(this.program, "uOffset");
     this.lightLocation = gl.getUniformLocation(this.program, "uLightDirection");
-    // birds are just spheres for now
-    const sphere = createSphere(1.0, 16, 16);
-    const cone = createCone(1.0, 1.0, 16);
+    // birds are cones, these values will be scaled later
+    const food = createSphere(1.0, 16, 16);
+    const bird = createCone(1.0, 1.0, 16);
 
-    this.sphereGeometry = this.createGeometry(sphere, boidDim);
-    this.coneGeometry = this.createGeometry(cone, boidDim);
+    this.sphereGeometry = this.createGeometry(food, boidDim);
+    this.coneGeometry = this.createGeometry(bird, boidDim);
   }
 
   createGeometry(geometry) {
@@ -104,20 +104,25 @@ export class Renderer {
     return shader;
   }
 
-  drawBird(position) {
+  drawObject(position, acceleration, type) {
     const [x, y, z] = position;
+    const [delX, delY, delZ] = acceleration;
 
-    // Body
-    this.drawGeometry(this.sphereGeometry, [x, y, z], [0.06, 0.035, 0.12]);
+    if (type == "BIRD") {
+      //this.drawGeometry(this.sphereGeometry, [x,y,z], [0.018, 0.018, 0.07])
+      this.drawGeometry(this.coneGeometry, [x,y,z], [0.05, 0.05, 1.0]);
+      // TODO use acceleration to point cone in bird direction
+    }
+    else if (type == "FOOD1") {
+      this.drawGeometry(this.sphereGeometry, [x,y,z], [0.025, 0.025, 0.025])
+    }
+    else {
+      console.log("MAKE DONUTS!!!")
+    }
 
-    // Head
-    this.drawGeometry(this.sphereGeometry, [x, y+0.015, z + 0.13], [0.035, 0.035, 0.035]);
-
-    // Beak
-    this.drawGeometry(this.coneGeometry, [x, y+0.015, z + 0.19], [0.018, 0.018, 0.07]);
   }
 
-  render(boidPositions, numBoids, boidDim) {
+  render(boidPositions, boidAccelerations, numBoids, boidDim) {
     const gl = this.gl;
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -136,7 +141,17 @@ export class Renderer {
       const y = boidPositions[i * boidDim + 1];
       const z = boidPositions[i * boidDim + 2];
 
-      this.drawBird([x,y,z]);
+      const delX = boidAccelerations[i * boidDim];
+      const delY = boidAccelerations[i * boidDim + 1];
+      const delZ = boidAccelerations[i * boidDim + 2];
+
+      if (i > 0 && i % 10 == 0) {
+        this.drawObject([x,y,z], [0,0,0], "FOOD");
+      }
+      else if (i > 0 && i % 11 == 0) {
+        this.drawObject([x,y,z], [0,0,0], "FOOD1");
+      }
+      else this.drawObject([x,y,z], [delX,delY,delZ], "BIRD");
     }
   }
 }
