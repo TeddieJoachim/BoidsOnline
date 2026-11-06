@@ -4,7 +4,7 @@ interpret this data, then draw the shape. */
 
 import { vertexShaderSource, fragmentShaderSource } from "./shaders.js";
 import { createSphere, createCone, createDonut} from "./primitives.js";
-import { loadTexture } from "./textures.js";
+import { loadTexture, loadVideoTexture, updateVideoTexture } from "./textures.js";
 
 export class Renderer {
   constructor(canvas, boidDim) {
@@ -42,7 +42,8 @@ export class Renderer {
     this.normalMapLocation = gl.getUniformLocation(
     this.program, "uNormalMap");
     this.useNormalMapLocation = gl.getUniformLocation(this.program, "uUseNormalMap");
-    this.heightTexture = loadTexture(gl, "./textures/bumps.png");
+    this.heightTexture = loadTexture(gl, "./textures/bumps.png");  
+    this.videoTexture = loadVideoTexture(gl,"./textures/kid.mp4");
 
     this.heightMapLocation = gl.getUniformLocation(this.program, "uHeightMap");
     this.useBumpMapLocation = gl.getUniformLocation(this.program, "uUseBumpMap");
@@ -201,6 +202,7 @@ export class Renderer {
     gl.enable(gl.DEPTH_TEST);
 
     gl.useProgram(this.program);
+    updateVideoTexture(gl, this.videoTexture);
     gl.uniform3f(this.lightLocation, 1.0, -2.0, -1.0);
 
     for (let i = 0; i < numBoids; i++) {
@@ -247,6 +249,7 @@ export class Renderer {
     this.drawGeometry(this.coneGeometry, [1.5,0.7,0.0], [0.15, 0.6, 0.15], { axis: [0, 1, 0], angle: spinAngle }, this.featherTexture, null);
     this.drawGeometry(this.sphereGeometry,[1.5, 0.1, 0.0], [0.25, 0.25, 0.25], { axis: [0, 1, 0], angle: spinAngle }, this.foodTexture, this.normalTexture, this.heightTexture);
     this.drawGeometry(this.donutGeometry, [1.5, -0.5, 0.0], [0.25, 0.25, 0.25], {axis: [1, 0, 0], angle: spinAngle}, this.foodTexture, this.normalTexture, this.heightTexture);
+    this.drawGeometry(this.sphereGeometry,[-1.5, 0.0, 0.0],[0.3, 0.3, 0.3],{ axis: [0, -1, 0], angle: spinAngle },this.videoTexture.texture);
   }
 }
 
