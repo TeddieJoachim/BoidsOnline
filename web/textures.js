@@ -4,7 +4,7 @@ export function loadTexture(gl, url) {
 
   gl.bindTexture(gl.TEXTURE_2D, texture);
 
-  // Temporary magenta pixel while the image loads
+  // white until loaded
   gl.texImage2D(
     gl.TEXTURE_2D,
     0,
@@ -14,7 +14,7 @@ export function loadTexture(gl, url) {
     0,
     gl.RGBA,
     gl.UNSIGNED_BYTE,
-    new Uint8Array([255, 0, 255, 255])
+    new Uint8Array([255, 255, 255, 255])
   );
 
   const image = new Image();

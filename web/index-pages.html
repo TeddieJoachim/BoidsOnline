@@ -10,11 +10,14 @@
     </style>
   </head>
   <body>
-    <p>Watch the birds (cones) chase after the food (spheres and donuts)!</p>
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div style="display: flex; flex-direction: column; align-items: center;">
+      <p>Watch the birds (cones) chase after the food (spheres and donuts)! The examples off to the right are so that you can more easily see the texture, bump and normal mapping.</p>
+      <canvas id="gameCanvas" width="1200" height="600"></canvas>
+
+      <button id="stopButton">Stop Simulation to Free Heap Memory. Or don't! It's your computer...</button>
+    </div>
 
     <script src="./build/boidRunner.js"></script>
     <script type="module" src="./main.js"></script>
-    <button id="stopButton">End Simulation and Prevent Memory Leaks (or don't, it's your computer!)</button>
   </body>
 </html>

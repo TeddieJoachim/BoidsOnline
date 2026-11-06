@@ -63,7 +63,8 @@ function runGame(Module) {
 
     // render using sharedHeapCoords (this is a pointer, not a copy!)
     renderer.render(sharedHeapCoords, sharedHeapVels, numBoids, boidDim);
-  
+    // Draw preview sphere
+    
     // next frame
     requestAnimationFrame(gameLoop);
   }
