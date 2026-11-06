@@ -5,6 +5,7 @@ export function createSphere(radius, latitudeBands, longitudeBands) {
   const vertices = [];
   const normals = [];
   const indices = [];
+  const uvs = [];
 
   // Generate vertices and normals
   for (let lat = 0; lat <= latitudeBands; lat++) {
@@ -17,6 +18,11 @@ export function createSphere(radius, latitudeBands, longitudeBands) {
       const nx = Math.sin(theta) * Math.cos(phi);
       const ny = Math.cos(theta);
       const nz = Math.sin(theta) * Math.sin(phi);
+
+      const u = lon / longitudeBands;
+      const v = lat / latitudeBands;
+
+      uvs.push(u, v);
 
       // Scale position by radius
       vertices.push(
@@ -44,24 +50,28 @@ export function createSphere(radius, latitudeBands, longitudeBands) {
   return {
     vertices: new Float32Array(vertices),
     normals: new Float32Array(normals),
-    indices: new Uint16Array(indices)
+    indices: new Uint16Array(indices),
+    uvs: new Float32Array(uvs)
   };
 }
+
 
 export function createCone(radius, height, segments) {
   const vertices = [];
   const normals = [];
+  const uvs = [];
   const indices = [];
 
   const halfHeight = height / 2;
   const normalLength = Math.sqrt(height * height + 4 * radius * radius);
 
-  // Tip of cone
+  // Side tip
   vertices.push(0, halfHeight, 0);
-  normals.push(0, 1,0);
+  normals.push(0, 1, 0);
+  uvs.push(0.5, 1.0);
 
-  // Side base vertices
-  for (let i = 0; i < segments; i++) {
+  // Side base vertices, including duplicated seam vertex
+  for (let i = 0; i <= segments; i++) {
     const theta = (2 * Math.PI * i) / segments;
 
     const x = radius * Math.cos(theta);
@@ -69,42 +79,53 @@ export function createCone(radius, height, segments) {
 
     vertices.push(x, -halfHeight, z);
 
-    // Side normal
     normals.push(
       (height * Math.cos(theta)) / normalLength,
       (2 * radius) / normalLength,
       (height * Math.sin(theta)) / normalLength
     );
+
+    const u = i / segments;
+    uvs.push(u, 0.0);
   }
 
   // Side triangles
   for (let i = 0; i < segments; i++) {
+    const tip = 0;
     const current = 1 + i;
-    const next = 1 + (i + 1) % segments;
+    const next = 1 + i + 1;
 
-    indices.push(0, current, next);
+    indices.push(tip, current, next);
   }
 
   // Base center
   const baseCenter = vertices.length / 3;
   vertices.push(0, -halfHeight, 0);
   normals.push(0, -1, 0);
+  uvs.push(0.5, 0.5);
 
   // Duplicate base ring with downward normals
   const baseStart = vertices.length / 3;
 
-  for (let i = 0; i < segments; i++) {
+  for (let i = 0; i <= segments; i++) {
     const theta = (2 * Math.PI * i) / segments;
 
-    vertices.push(radius * Math.cos(theta), -halfHeight, radius * Math.sin(theta));
+    const x = radius * Math.cos(theta);
+    const z = radius * Math.sin(theta);
 
+    vertices.push(x, -halfHeight, z);
     normals.push(0, -1, 0);
+
+    // Planar UV mapping
+    const u = 0.5 + 0.5 * Math.cos(theta);
+    const v = 0.5 + 0.5 * Math.sin(theta);
+    uvs.push(u, v);
   }
 
   // Base triangles
   for (let i = 0; i < segments; i++) {
     const current = baseStart + i;
-    const next = baseStart + (i + 1) % segments;
+    const next = baseStart + i + 1;
 
     indices.push(baseCenter, next, current);
   }
@@ -112,14 +133,18 @@ export function createCone(radius, height, segments) {
   return {
     vertices: new Float32Array(vertices),
     indices: new Uint16Array(indices),
-    normals: new Float32Array(normals)
+    normals: new Float32Array(normals),
+    uvs: new Float32Array(uvs)
   };
 }
+
+
 
 
 export function createDonut(majorRadius, minorRadius, majorSegments, minorSegments) {
   const vertices = [];
   const normals = [];
+  const uvs = [];
   const indices = [];
 
   for (let i = 0; i <= majorSegments; i++) {
@@ -141,6 +166,12 @@ export function createDonut(majorRadius, minorRadius, majorSegments, minorSegmen
       const z = (majorRadius + minorRadius * Math.cos(phi)) * Math.sin(theta);
 
       vertices.push(x, y, z);
+
+      // UV coordinates
+      const u = i / majorSegments;
+      const v = j / minorSegments;
+
+      uvs.push(u, v);
     }
   }
 
@@ -150,13 +181,18 @@ export function createDonut(majorRadius, minorRadius, majorSegments, minorSegmen
       const current = i * (minorSegments + 1) + j;
       const next = current + minorSegments + 1;
 
-      indices.push(current, next, current + 1, current + 1, next, next + 1);
+      indices.push(
+        current, next, current + 1,
+        current + 1, next, next + 1
+      );
     }
   }
 
   return {
     vertices: new Float32Array(vertices),
     normals: new Float32Array(normals),
-    indices: new Uint16Array(indices)
+    indices: new Uint16Array(indices),
+    uvs: new Float32Array(uvs)
   };
 }
+

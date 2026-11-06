@@ -4,7 +4,7 @@ interpret this data, then draw the shape. */
 
 import { vertexShaderSource, fragmentShaderSource } from "./shaders.js";
 import { createSphere, createCone, createDonut} from "./primitives.js";
-
+import { loadTexture } from "./textures.js";
 
 export class Renderer {
   constructor(canvas, boidDim) {
@@ -30,6 +30,14 @@ export class Renderer {
     if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
       throw new Error(gl.getProgramInfoLog(this.program));
     }
+
+    // Texture uniforms
+    this.textureLocation = gl.getUniformLocation(this.program, "uTexture");
+    this.useTextureLocation = gl.getUniformLocation(this.program, "uUseTexture");
+
+    // Load food and feather texture
+    this.foodTexture = loadTexture(gl, "./textures/pumpkin.png");
+    this.featherTexture = loadTexture(gl, "./textures/feathers2.png");
 
     this.rotationAxisLocation = gl.getUniformLocation(this.program, "uRotationAxis");
     this.rotationAngleLocation = gl.getUniformLocation(this.program, "uRotationAngle");
@@ -70,6 +78,14 @@ export class Renderer {
     gl.enableVertexAttribArray(normalLocation);
     gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);
 
+    // UV buffer
+    const uvBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, geometry.uvs, gl.STATIC_DRAW);
+
+    const uvLocation = gl.getAttribLocation(this.program, "aUV");
+    gl.enableVertexAttribArray(uvLocation);
+    gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
     // Index buffer
     const indexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
@@ -81,21 +97,28 @@ export class Renderer {
     return {vao, indexCount: geometry.indices.length};
   }
 
-  drawGeometry(geometry, position, scale, rotation) {
+  drawGeometry(geometry, position, scale, rotation, texture = null) {
     const gl = this.gl;
-    
+
     gl.uniform3fv(this.rotationAxisLocation, rotation.axis);
     gl.uniform1f(this.rotationAngleLocation, rotation.angle);
 
     gl.bindVertexArray(geometry.vao);
 
-    // Set position and scale
     gl.uniform3f(this.offsetLocation, position[0], position[1], position[2]);
-
     gl.uniform3f(this.scaleLocation, scale[0], scale[1], scale[2]);
 
-    gl.drawElements(gl.TRIANGLES, geometry.indexCount, gl.UNSIGNED_SHORT, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.uniform1i(this.textureLocation, 0);
+    gl.uniform1i(this.useTextureLocation, texture ? 1 : 0);
 
+    gl.drawElements(
+      gl.TRIANGLES,
+      geometry.indexCount,
+      gl.UNSIGNED_SHORT,
+      0
+    );
   }
 
   compileShader(type, source) {
@@ -118,14 +141,14 @@ export class Renderer {
     const donutRotation = {axis: [1, 0, 0], angle: Math.PI / 2};
     if (type == "BIRD") {
       //this.drawGeometry(this.sphereGeometry, [x,y,z], [0.018, 0.018, 0.07])
-      this.drawGeometry(this.coneGeometry, [x,y,z], [0.025, 0.08, 0.025], rotation);
+      this.drawGeometry(this.coneGeometry, [x,y,z], [0.025, 0.08, 0.025], rotation, this.featherTexture);
       // TODO use acceleration to point cone in bird direction
     }
     else if (type == "FOOD1") {
-      this.drawGeometry(this.sphereGeometry, [x,y,z], [0.015, 0.015, 0.015], IDRot);
+      this.drawGeometry(this.sphereGeometry, [x,y,z], [0.02, 0.02, 0.02], IDRot, this.foodTexture);
     }
     else {
-      this.drawGeometry(this.donutGeometry, [x,y,z], [0.02, 0.02, 0.02], donutRotation);
+      this.drawGeometry(this.donutGeometry, [x,y,z], [0.03, 0.03, 0.03], donutRotation, this.foodTexture);
     }
 
   }
